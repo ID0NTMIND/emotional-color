@@ -227,3 +227,52 @@ class MLTask:
         """Помечает задачу как проваленную."""
         self._status = self.STATUS_FAILED
         self._updated_at = datetime.now()
+
+
+class Transaction(ABC):
+    """Абстрактная транзакция"""
+
+    def __init__(
+        self,
+        user: User,
+        amount: Decimal,
+        task: Optional[MLTask] = None
+    ) -> None:
+        self._id: UUID = uuid4()
+        self._user_id: UUID = user.id
+        self._amount: Decimal = amount
+        self._task_id: Optional[UUID] = task.id if task else None
+        self._timestamp: datetime = datetime.now()
+
+    @property
+    def amount(self) -> Decimal:
+        return self._amount
+
+    @property
+    def user_id(self) -> UUID:
+        return self._user_id
+
+    @property
+    def task_id(self) -> Optional[UUID]:
+        return self._task_id
+
+    @abstractmethod
+    def apply(self, user: User) -> None:
+        """Применить транзакцию к пользователю. Полиморфный метод."""
+        pass
+
+
+class DebitTransaction(Transaction):
+    """Списание средств за использование модели"""
+
+    def apply(self, user: User) -> None:
+        succes = user.withdraw(self.amount)
+        if not succes:
+            raise ValueError("Недостаточно средств на балансе")
+
+
+class CreditTransaction(Transaction):
+    """Пополнение баланса (позже возможно админимтратором тоже, пока хз)"""
+
+    def apply(self, user: User) -> None:
+        user.deposit(self._amount)
