@@ -24,42 +24,36 @@ class User:
         self._balance: Decimal = balance
         self._created_at: datetime = datetime.now()
 
+    @property
+    def id(self) -> UUID:
+        return self._id
 
-@property
-def id(self) -> UUID:
-    return self._id
+    @property
+    def username(self) -> str:
+        return self._username
 
+    @property
+    def role(self) -> str:
+        return self._role
 
-@property
-def username(self) -> str:
-    return self._username
+    @property
+    def balance(self) -> Decimal:
+        return self._balance
 
+    # Методы работы с балансом
 
-@property
-def role(self) -> str:
-    return self._role
+    def deposit(self, amount: Decimal) -> None:
+        if amount <= 0:
+            raise ValueError('Сумма пополнения должна быть положительной')
+        self._balance += amount
 
-
-@property
-def balance(self) -> Decimal:
-    return self._balance
-
-# Методы работы с балансом
-
-
-def deposit(self, amount: Decimal) -> None:
-    if amount <= 0:
-        raise ValueError('Сумма пополнения должна быть положительной')
-    self._balance += deposit
-
-
-def withdraw(self, amount: Decimal) -> bool:
-    if amount <= 0:
-        raise ValueError('Сумма саписания должна быть положительной')
-    if self._balance < amount:
-        return False
-    self._balance -= amount
-    return True
+    def withdraw(self, amount: Decimal) -> bool:
+        if amount <= 0:
+            raise ValueError('Сумма саписания должна быть положительной')
+        if self._balance < amount:
+            return False
+        self._balance -= amount
+        return True
 
 
 class MLmodel(ABC):
