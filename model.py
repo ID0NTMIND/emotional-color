@@ -49,14 +49,14 @@ class User:
 
     def withdraw(self, amount: Decimal) -> bool:
         if amount <= 0:
-            raise ValueError('Сумма саписания должна быть положительной')
+            raise ValueError('Сумма списания должна быть положительной')
         if self._balance < amount:
             return False
         self._balance -= amount
         return True
 
 
-class MLmodel(ABC):
+class MLModel(ABC):
     """Абстрактный класс для ML моделей"""
 
     def __init__(
@@ -104,7 +104,7 @@ class MLmodel(ABC):
         ...
 
 
-class TextSentimentModel(MLmodel):
+class TextSentimentModel(MLModel):
     """
     Модель классификации окраски текста на базе HuggingFace.
     Предварительно использует lxyuan/distilbert-base-multilingual-cased-sentiments-student (возможно изменю позже)
@@ -180,7 +180,7 @@ class MLTask:
     def __init__(
         self,
         user: User,
-        model: MLmodel,
+        model: MLModel,
         input_data: str
     ) -> None:
         self._id: UUID = uuid4()
@@ -259,20 +259,20 @@ class Transaction(ABC):
     @abstractmethod
     def apply(self, user: User) -> None:
         """Применить транзакцию к пользователю. Полиморфный метод."""
-        pass
+        ...
 
 
 class DebitTransaction(Transaction):
     """Списание средств за использование модели"""
 
     def apply(self, user: User) -> None:
-        succes = user.withdraw(self.amount)
-        if not succes:
+        success = user.withdraw(self._amount)
+        if not success:
             raise ValueError("Недостаточно средств на балансе")
 
 
 class CreditTransaction(Transaction):
-    """Пополнение баланса (позже возможно админимтратором тоже, пока хз)"""
+    """Пополнение баланса (позже возможно администратором тоже, пока хз)"""
 
     def apply(self, user: User) -> None:
         user.deposit(self._amount)
