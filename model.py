@@ -60,3 +60,116 @@ def withdraw(self, amount: Decimal) -> bool:
         return False
     self._balance -= amount
     return True
+
+
+class MLmodel(ABC):
+    """Абстрактный класс для ML моделей"""
+
+    def __init__(
+        self,
+        name: str,
+        description: str,
+        cost_per_prediction: Decimal,
+    ) -> None:
+        self._id: UUID = uuid4()
+        self._name: str = name
+        self._description: str = description
+        self._cost: Decimal = cost_per_prediction
+
+    @property
+    def id(self) -> UUID:
+        return self._id
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def description(self) -> str:
+        return self._description
+
+    @property
+    def cost_per_prediction(self) -> Decimal:
+        return self._cost
+
+    @abstractmethod
+    def predict(self, input_data: str) -> "PredictionResult":
+        """
+        Выполнить предсказание на одном экземпляре данных.
+        Реализация должна возвращать объект PredictionResult.
+        """
+        ...
+
+    @abstractmethod
+    def validate(self, input_data: str) -> Tuple[bool, List[str]]:
+        """
+        Валидирует входные данные.
+        Возвращает (True, []) если данные корректны,
+        (False, список ошибок) если есть ошибки.
+        """
+        ...
+
+
+class TextSentimentModel(MLmodel):
+    """
+    Модель классификации окраски текста на базе HuggingFace.
+    Предварительно использует lxyuan/distilbert-base-multilingual-cased-sentiments-student (возможно изменю позже)
+    """
+
+    def __init__(self, cost: Decimal = Decimal('1.0'), max_text_length: int = 512) -> None:
+        super().__init__(
+            name="Text Sentiment Classifier",
+            description="Модель классификации текста на классы: positive, neutral, negative",
+            cost_per_prediction=cost
+        )
+
+        self._pipeline = None  # Заглушка под модель которую выберу
+        self._max_text_length = max_text_length
+
+    def predict(self, input_data: str) -> "PredictionResult":
+        """Запускает пайплайн и возвращает PredictionResult."""
+        # Здесь будет вызов self._pipeline(input_data)
+        # Заглушка
+        return PredictionResult(
+            label="neutral",
+            confidence=Decimal("0.95"),
+            model_id=self._id,
+        )
+
+    def validate(self, input_data: str) -> Tuple[bool, List[str]]:
+        """Проверяет что текст не пуст, и не превышает максимальную длину"""
+        errors = []
+        if not input_data or not input_data.strip():
+            errors.append("Текст не может быть пустым")
+        if len(input_data) > self._max_text_length:
+            errors.append(
+                f"Максимальная длина текста - {self._max_text_length} символов")
+        return len(errors) == 0, errors
+
+
+class PredictionResult:
+    """Результат одного предсказания модели"""
+
+    def __init__(
+        self,
+        label: str,
+        confidence: Decimal,
+        model_id: UUID
+    ) -> None:
+        self._id: UUID = uuid4()
+        self._label: str = label
+        self._confidence: Decimal = confidence
+        self._model_id: UUID = model_id
+        self._created_at: datetime = datetime.now()
+
+    @property
+    def label(self) -> str:
+        return self._label
+
+    @property
+    def confidence(self) -> Decimal:
+        return self._confidence
+
+    @property
+    def model_id(self) -> UUID:
+        return self._model_id
