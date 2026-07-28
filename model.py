@@ -137,7 +137,7 @@ class TextSentimentModel(MLmodel):
         )
 
     def validate(self, input_data: str) -> Tuple[bool, List[str]]:
-        """Проверяет что текст не пуст, и не превышает максимальную длину"""
+        """Проверяет что текст не пустой, и не превышает максимальную длину"""
         errors = []
         if not input_data or not input_data.strip():
             errors.append("Текст не может быть пустым")
@@ -173,3 +173,63 @@ class PredictionResult:
     @property
     def model_id(self) -> UUID:
         return self._model_id
+
+
+class MLTask:
+    """Задача поставленная пользователем для ML-модели."""
+
+    STATUS_PENDING = "pending"
+    STATUS_PROCESSING = "processing"
+    STATUS_COMPLETED = "completed"
+    STATUS_FAILED = "failed"
+
+    def __init__(
+        self,
+        user: User,
+        model: MLmodel,
+        input_data: str
+    ) -> None:
+        self._id: UUID = uuid4()
+        self._user_id: UUID = user.id
+        self._model_id: UUID = model.id
+        self._input_data: str = input_data
+        self._status = self.STATUS_PENDING
+        self._result: Optional[PredictionResult] = None
+        self._created_at: datetime = datetime.now()
+        self._updated_at: datetime = self._created_at
+
+    @property
+    def id(self) -> UUID:
+        return self._id
+
+    @property
+    def user_id(self) -> UUID:
+        return self._user_id
+
+    @property
+    def model_id(self) -> UUID:
+        return self._model_id
+
+    @property
+    def status(self) -> str:
+        return self._status
+
+    @property
+    def result(self) -> Optional[PredictionResult]:
+        return self._result
+
+    def start_processing(self) -> None:
+        """Переводит задачу в статус обработки."""
+        self._status = self.STATUS_PROCESSING
+        self._updated_at = datetime.now()
+
+    def complete(self, result: PredictionResult) -> None:
+        """Фиксирует успешное завершение задачи."""
+        self._result = result
+        self._status = self.STATUS_COMPLETED
+        self._updated_at = datetime.now()
+
+    def fail(self) -> None:
+        """Помечает задачу как проваленную."""
+        self._status = self.STATUS_FAILED
+        self._updated_at = datetime.now()
