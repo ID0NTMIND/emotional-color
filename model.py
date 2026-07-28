@@ -276,3 +276,26 @@ class CreditTransaction(Transaction):
 
     def apply(self, user: User) -> None:
         user.deposit(self._amount)
+
+
+if __name__ == "__main__":
+    user = User(username="demo", password_hash="hash")
+    user.deposit(Decimal("10"))
+    print(f"User balance: {user.balance}")
+
+    model = TextSentimentModel()
+    task = MLTask(user, model, "Отличный сервис!")
+    print(f"Task status: {task.status}")
+
+    task.start_processing()
+    result = model.predict(task._input_data)
+    task.complete(result)
+    if task.result is not None:
+        print(
+            f"Result: {task.result.label}, confidence: {task.result.confidence}")
+    else:
+        print("Результат отсутствует")
+
+    debit = DebitTransaction(user, model.cost_per_prediction, task)
+    debit.apply(user)
+    print(f"New balance: {user.balance}")
