@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  app:
+    build: ./app
+    env_file:
+      - ./app/.env
+    volumes:
+      - ./app/src:/app/src
+    depends_on:
+      - database
+      - rabbitmq
+    networks:
+      - backend
+
+  web-proxy:
+    build: ./web-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - app
+    networks:
+      - backend
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    restart: unless-stopped
+    networks:
+      - backend
+
+  database:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: mldb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - backend
+
+volumes:
+  rabbitmq_data:
+  postgres_data:
+
+networks:
+  backend:
+    driver: bridge
