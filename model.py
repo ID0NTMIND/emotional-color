@@ -36,7 +36,7 @@ class Balance:
 
     # Методы работы с балансом
 
-    def deposit(self, amount: Decimal):
+    def deposit(self, amount: Decimal) -> None:
         if amount <= 0:
             raise ValueError("Сумма пополнения должна быть положительной")
         self._amount += amount
