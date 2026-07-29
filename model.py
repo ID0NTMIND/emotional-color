@@ -9,19 +9,60 @@ from typing import List, Optional, Tuple
 from uuid import UUID, uuid4
 
 
+class Balance:
+    def __init__(
+        self,
+        user_id: UUID,
+        amount: Decimal = Decimal('0.0'),
+    ) -> None:
+        if amount < 0:
+            raise ValueError("Начальный баланс не может быть отрицательным")
+        self._id: UUID = uuid4()
+        self._user_id: UUID = user_id
+        self._amount: Decimal = amount
+        self._updated_at: datetime = datetime.now()
+
+    @property
+    def id(self) -> UUID:
+        return self._id
+
+    @property
+    def user_id(self) -> UUID:
+        return self._user_id
+
+    @property
+    def amount(self):
+        return self._amount
+
+    # Методы работы с балансом
+
+    def deposit(self, amount: Decimal):
+        if amount <= 0:
+            raise ValueError("Сумма пополнения должна быть положительной")
+        self._amount += amount
+        self._updated_at = datetime.now()
+
+    def withdraw(self, amount: Decimal) -> bool:
+        if amount <= 0:
+            raise ValueError("Сумма списания должна быть положительной")
+        if self._amount < amount:
+            return False
+        self._amount -= amount
+        self._updated_at = datetime.now()
+        return True
+
+
 class User:
     def __init__(
         self,
         username: str,
         password_hash: str,
-        role: str = 'user',
-        balance: Decimal = Decimal('0.0')
+        role: str = 'user'
     ) -> None:
         self._id: UUID = uuid4()
         self._username: str = username
         self._password_hash: str = password_hash
         self._role: str = role
-        self._balance: Decimal = balance
         self._created_at: datetime = datetime.now()
 
     @property
@@ -36,24 +77,8 @@ class User:
     def role(self) -> str:
         return self._role
 
-    @property
-    def balance(self) -> Decimal:
-        return self._balance
-
-    # Методы работы с балансом
-
-    def deposit(self, amount: Decimal) -> None:
-        if amount <= 0:
-            raise ValueError('Сумма пополнения должна быть положительной')
-        self._balance += amount
-
-    def withdraw(self, amount: Decimal) -> bool:
-        if amount <= 0:
-            raise ValueError('Сумма списания должна быть положительной')
-        if self._balance < amount:
-            return False
-        self._balance -= amount
-        return True
+    def is_admin(self) -> bool:
+        return self._role == "admin"
 
 
 class MLModel(ABC):
@@ -257,16 +282,16 @@ class Transaction(ABC):
         return self._task_id
 
     @abstractmethod
-    def apply(self, user: User) -> None:
-        """Применить транзакцию к пользователю. Полиморфный метод."""
+    def apply(self, balance: Balance) -> None:
+        """Применить транзакцию к балансу. Полиморфный метод."""
         ...
 
 
 class DebitTransaction(Transaction):
     """Списание средств за использование модели"""
 
-    def apply(self, user: User) -> None:
-        success = user.withdraw(self._amount)
+    def apply(self, balance: Balance) -> None:
+        success = balance.withdraw(self._amount)
         if not success:
             raise ValueError("Недостаточно средств на балансе")
 
@@ -274,28 +299,41 @@ class DebitTransaction(Transaction):
 class CreditTransaction(Transaction):
     """Пополнение баланса (позже возможно администратором тоже, пока хз)"""
 
-    def apply(self, user: User) -> None:
-        user.deposit(self._amount)
+    def apply(self, balance: Balance) -> None:
+        balance.deposit(self._amount)
 
 
 if __name__ == "__main__":
+    # Создаём пользователей
     user = User(username="demo", password_hash="hash")
-    user.deposit(Decimal("10"))
-    print(f"User balance: {user.balance}")
+    admin = User(username="admin", password_hash="adminhash", role="admin")
 
+    # Создаём балансы для пользователей (в реальности баланс будет создаваться при регистрации? (идея))
+    user_balance = Balance(user_id=user.id, amount=Decimal("10"))
+    admin_balance = Balance(user_id=admin.id, amount=Decimal("100"))
+
+    print(f"User balance: {user_balance.amount}")
+    print(f"Admin balance: {admin_balance.amount}")
+
+    # Администратор пополняет баланс пользователю
+    # (получает объект Balance пользователя по user_id — в реальном приложении через репозиторий)
+    if admin.is_admin():
+        user_balance.deposit(Decimal("50"))
+        print(f"Admin topped up user. New user balance: {user_balance.amount}")
+
+    # Выполнение ML-задачи
     model = TextSentimentModel()
     task = MLTask(user, model, "Отличный сервис!")
-    print(f"Task status: {task.status}")
-
     task.start_processing()
     result = model.predict(task._input_data)
     task.complete(result)
+
+    # Списание средств через транзакцию
+    debit = DebitTransaction(user, model.cost_per_prediction, task)
+    debit.apply(user_balance)
+    print(f"User balance after debit: {user_balance.amount}")
+
+    # Проверка результата
     if task.result is not None:
         print(
-            f"Result: {task.result.label}, confidence: {task.result.confidence}")
-    else:
-        print("Результат отсутствует")
-
-    debit = DebitTransaction(user, model.cost_per_prediction, task)
-    debit.apply(user)
-    print(f"New balance: {user.balance}")
+            f"Task result: {task.result.label}, confidence: {task.result.confidence}")
