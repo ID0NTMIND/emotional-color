@@ -30,7 +30,7 @@ services:
       - "15672:15672"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
-    restart: unless-stopped
+    restart: on-failure
     networks:
       - backend
 
