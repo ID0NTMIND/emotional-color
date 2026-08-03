@@ -35,7 +35,7 @@ services:
       - backend
 
   database:
-    image: postgres:15
+    image: postgres:16-alpine
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: pass
