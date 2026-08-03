@@ -50,7 +50,7 @@ class MLModel(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     name: str
     description: Optional[str] = None
-    cost_per_predictions: Decimal = Field(max_digits=10, decimal_places=2)
+    cost_per_prediction: Decimal = Field(max_digits=10, decimal_places=2)
 
     tasks: List["MLTask"] = Relationship(back_populates="model")
 
@@ -88,6 +88,6 @@ class Transaction(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     user_id: UUID = Field(foreign_key="users.id")
     amount: Decimal = Field(max_digits=10, decimal_places=2)
-    type: TransactionType
+    transaction_type: TransactionType
     task_id: Optional[UUID] = Field(default=None, foreign_key="ml_tasks.id")
     timestamp: datetime = Field(default_factory=datetime.now)
