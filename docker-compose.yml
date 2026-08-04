@@ -36,15 +36,18 @@ services:
 
   database:
     image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: pass
-      POSTGRES_DB: mldb
+    env_file:
+      - ./database.env     
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
     networks:
       - backend
+    healthcheck:   #тест
+      test: ["CMD-SHELL", "pg_isready -U user -d mldb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 volumes:
   rabbitmq_data:
