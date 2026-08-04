@@ -1,13 +1,16 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from src.db.init_db import init
 
-app = FastAPI(title="ML Service API")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init()   # выполняется при запуске
+    yield    # приложение работает
+
+app = FastAPI(title="ML Service API", lifespan=lifespan)
 
 
 @app.get("/")
 async def root():
-    return {"message": "Hello from ML Service API!"}
-
-
-@app.get("/health")
-async def health():
     return {"status": "ok"}
