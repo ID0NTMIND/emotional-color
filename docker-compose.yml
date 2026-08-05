@@ -8,10 +8,15 @@ services:
     volumes:
       - ./app/src:/app/src
     depends_on:
-      - database
-      - rabbitmq
+      database:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
     networks:
       - backend
+    environment:
+      - PYTHONIOENCODING=utf-8
+      - PYTHONUTF8=1
 
   web-proxy:
     build: ./web-proxy
