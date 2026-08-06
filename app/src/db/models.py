@@ -29,6 +29,7 @@ class User(SQLModel, table=True):
     password_hash: str
     role: str = Field(default="user")
     created_at: datetime = Field(default_factory=datetime.now)
+    auth_token: Optional[str] = Field(default=None, unique=True)
 
     # Связи
     balance: Optional["Balance"] = Relationship(back_populates="user")
