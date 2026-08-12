@@ -1,0 +1,5 @@
+SQLAlchemy==2.0.51
+sqlmodel==0.0.39
+psycopg2-binary==2.9.12
+pika==1.4.4
+transformers

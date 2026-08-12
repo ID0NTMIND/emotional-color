@@ -7,6 +7,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional, Tuple
 from uuid import UUID, uuid4
+from transformers import pipeline
 
 
 class Balance:
@@ -130,28 +131,26 @@ class MLModel(ABC):
 
 
 class TextSentimentModel(MLModel):
-    """
-    Модель классификации окраски текста на базе HuggingFace.
-    Предварительно использует lxyuan/distilbert-base-multilingual-cased-sentiments-student (возможно изменю позже)
-    """
-
-    def __init__(self, cost: Decimal = Decimal('1.0'), max_text_length: int = 512) -> None:
+    def __init__(self, cost: Decimal = Decimal("1.0"), max_text_length: int = 512) -> None:
         super().__init__(
             name="Text Sentiment Classifier",
             description="Модель классификации текста на классы: positive, neutral, negative",
             cost_per_prediction=cost
         )
-
-        self._pipeline = None  # Заглушка под модель которую выберу
         self._max_text_length = max_text_length
+        self._pipeline = pipeline(
+            "sentiment-analysis",
+            model="lxyuan/distilbert-base-multilingual-cased-sentiments-student",
+            top_k=None
+        )
 
     def predict(self, input_data: str) -> "PredictionResult":
-        """Запускает пайплайн и возвращает PredictionResult."""
-        # Здесь будет вызов self._pipeline(input_data)
-        # Заглушка
+        text = input_data[:self._max_text_length]
+        results = self._pipeline(text)[0]
+        best = max(results, key=lambda x: x['score'])
         return PredictionResult(
-            label="neutral",
-            confidence=Decimal("0.95"),
+            label=best['label'],
+            confidence=Decimal(str(best['score'])),
             model_id=self._id,
         )
 

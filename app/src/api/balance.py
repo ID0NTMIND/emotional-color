@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
 from src.api.dependencies import get_current_user, get_db
-from src.services.user_service import top_up_balance
+from shared.services.user_service import top_up_balance
 from src.api.schemas import BalanceTopUp
-from src.db.models import User
+from shared.db.models import User
 
 
 router = APIRouter(prefix="/balance", tags=["balance"])

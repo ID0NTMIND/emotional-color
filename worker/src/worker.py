@@ -1,6 +1,6 @@
-from src.domain_model import TextSentimentModel
-from src.db.models import MLTask, MLModel, PredictionResult, TaskStatus
-from src.db.database import engine
+from shared.domain_model import TextSentimentModel
+from shared.db.models import MLTask, MLModel, PredictionResult, TaskStatus
+from shared.db.database import engine
 import json
 import os
 import sys
@@ -10,10 +10,10 @@ import pika
 from decimal import Decimal
 from sqlmodel import Session, select
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://guest:guest@rabbitmq:5672/")
 WORKER_ID = os.getenv("WORKER_ID", f"worker-{random.randint(1,100)}")
+
+sentiment_model = TextSentimentModel()
 
 
 def process_task(task_id: str):
@@ -38,7 +38,6 @@ def process_task(task_id: str):
             print(f"[{WORKER_ID}] Model not found for task {task_id}")
             return
 
-        sentiment_model = TextSentimentModel()
         prediction_result = sentiment_model.predict(task.input_data)
 
         result = PredictionResult(

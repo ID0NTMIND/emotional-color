@@ -1,5 +1,5 @@
 from sqlmodel import Session, select, col, desc
-from src.db.models import User, Balance, Transaction, MLTask, TransactionType
+from shared.db.models import User, Balance, Transaction, MLTask, TransactionType
 from decimal import Decimal
 from typing import List, Tuple, Optional
 

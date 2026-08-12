@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 from src.api.dependencies import get_current_user, get_db
 from src.api.schemas import PredictionRequest, PredictionResponse
-from src.db.models import MLModel, MLTask, User, TaskStatus
-from src.services.user_service import deduct_balance
+from shared.db.models import MLModel, MLTask, User, TaskStatus
+from shared.services.user_service import deduct_balance
 from src.broker.rabbitmq import publish_task
 import uuid
 
