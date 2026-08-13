@@ -22,6 +22,11 @@ app.include_router(history.router)
 app.include_router(predictions.router)
 
 
+@app.get("/")
+async def read_index():
+    return FileResponse("src/static/index.html")
+
+
 @app.get("/{page}.html")
 async def read_page(page: str):
     # Проверяем, что файл существует, иначе отдаём 404

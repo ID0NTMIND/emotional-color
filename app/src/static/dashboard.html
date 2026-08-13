@@ -13,7 +13,7 @@
     <!-- Навигация -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
-            <a class="navbar-brand" href="/">Sentiment ML</a>
+            <a class="navbar-brand" href="/">E.C.</a>
             <div class="ms-auto">
                 <a href="/history.html" class="btn btn-outline-light me-2">История</a>
                 <button id="logoutBtn" class="btn btn-light">Выйти</button>
@@ -84,7 +84,7 @@
                 const data = await apiRequest('/balance');
                 document.getElementById('balance').textContent = data.balance;
             } catch (err) {
-                document.getElementById('topupMessage').textContent = err.message;
+                document.getElementById('topupMessage').innerHTML = `<div class="alert alert-danger">⚠️ ${err.message}</div>`;
             }
         }
 
@@ -98,10 +98,9 @@
             try {
                 const data = await apiRequest('/balance/topup', 'POST', { amount: parseFloat(amount) });
                 document.getElementById('balance').textContent = data.balance;
-                document.getElementById('topupMessage').textContent = 'Баланс успешно пополнен!';
-                document.getElementById('topupMessage').className = 'text-success';
+                document.getElementById('topupMessage').innerHTML = '<div class="alert alert-success">✅ Баланс успешно пополнен!</div>';
             } catch (err) {
-                document.getElementById('topupMessage').textContent = err.message;
+                document.getElementById('topupMessage').innerHTML = `<div class="alert alert-danger">⚠️ ${err.message}</div>`;
                 document.getElementById('topupMessage').className = 'text-danger';
             }
         });
@@ -110,21 +109,18 @@
         document.getElementById('predictBtn').addEventListener('click', async () => {
             const text = document.getElementById('textInput').value.trim();
             if (!text) {
-                document.getElementById('predictError').textContent = 'Введите текст для анализа';
+                document.getElementById('predictError').innerHTML = '<div class="alert alert-danger">⚠️ Введите текст для анализа</div>';
                 return;
             }
-            document.getElementById('predictError').textContent = '';
+            document.getElementById('predictError').innerHTML = '';
             document.getElementById('predictResult').innerHTML = '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Загрузка...</span></div>';
             try {
                 const data = await apiRequest('/predict', 'POST', { text });
-                //в ответе может быть статус pending
                 if (data.status === 'completed') {
                     showPredictionResult(data);
                 } else {
-                    // Если pending, ждём немного и пробуем получить результат
                     setTimeout(async () => {
                         try {
-                            // Здесь можно использовать GET /history/predictions?limit=1
                             const hist = await apiRequest('/history/predictions?limit=1');
                             if (hist.length > 0 && hist[0].id === data.task_id) {
                                 showPredictionResult(hist[0]);
@@ -132,22 +128,34 @@
                                 document.getElementById('predictResult').innerHTML = '<div class="alert alert-info">Задача всё ещё обрабатывается. Обновите страницу.</div>';
                             }
                         } catch (e) {
-                            document.getElementById('predictError').textContent = e.message;
+                            document.getElementById('predictResult').innerHTML = ''; // убираем спиннер
+                            document.getElementById('predictError').innerHTML = `<div class="alert alert-danger">⚠️ ${e.message}</div>`;
                         }
                     }, 2000);
                 }
             } catch (err) {
-                document.getElementById('predictError').textContent = err.message;
+                document.getElementById('predictResult').innerHTML = ''; // убираем спиннер
+                document.getElementById('predictError').innerHTML = `<div class="alert alert-danger">⚠️ ${err.message}</div>`;
             }
         });
 
+        function getSentimentInfo(label) {
+            const map = {
+                positive: { emoji: '😊', text: 'Позитивная', cssClass: 'positive' },
+                negative: { emoji: '😠', text: 'Негативная', cssClass: 'negative' },
+                neutral: { emoji: '😐', text: 'Нейтральная', cssClass: 'neutral' }
+            };
+            return map[label] || { emoji: '❓', text: label, cssClass: 'neutral' };
+        }
+
         function showPredictionResult(result) {
+            const info = getSentimentInfo(result.label || result.result?.label);
             document.getElementById('predictResult').innerHTML = `
-                <div class="alert alert-success">
-                    <strong>Результат:</strong> ${result.label || result.result?.label}<br>
-                    <strong>Уверенность:</strong> ${result.confidence || result.result?.confidence}<br>
-                    <strong>Статус:</strong> ${result.status}
-                </div>`;
+        <div class="result-box ${info.cssClass}">
+            <div class="emotion">${info.emoji}</div>
+            <div class="fw-bold fs-5 mt-2">${info.text}</div>
+            <div class="text-muted mt-1">Уверенность: ${result.confidence || result.result?.confidence}</div>
+        </div>`;
             updateBalance();
         }
 
