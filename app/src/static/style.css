@@ -1,0 +1,90 @@
+/* Общие стили */
+body {
+    background: #f5f7fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+}
+
+.navbar-brand {
+    font-weight: bold;
+    font-size: 1.4rem;
+}
+
+.card {
+    border: none;
+    border-radius: 15px;
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.btn {
+    border-radius: 10px;
+    font-weight: 500;
+}
+
+/* Герой-секция на главной */
+.hero {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 15px;
+    padding: 3rem 2rem;
+    margin-top: 2rem;
+    text-align: center;
+}
+
+.hero h1 {
+    font-size: 2.8rem;
+    font-weight: 700;
+}
+
+.hero p {
+    font-size: 1.2rem;
+    opacity: 0.9;
+}
+
+/* Отображение баланса */
+.balance-big {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #4a90e2;
+}
+
+/* Результат предсказания */
+.result-box {
+    border-radius: 15px;
+    padding: 1.5rem;
+    text-align: center;
+    font-size: 1.2rem;
+    margin-top: 1rem;
+}
+
+.result-box.positive {
+    background: #e6f9e6;
+    border: 2px solid #28a745;
+    color: #155724;
+}
+
+.result-box.negative {
+    background: #fde8e8;
+    border: 2px solid #dc3545;
+    color: #721c24;
+}
+
+.result-box.neutral {
+    background: #f0f0f0;
+    border: 2px solid #6c757d;
+    color: #383d41;
+}
+
+.emotion {
+    font-size: 3rem;
+}
+
+/* Ошибки */
+.alert {
+    border-radius: 10px;
+}
