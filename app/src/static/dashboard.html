@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Личный кабинет</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/style.css" rel="stylesheet">
+</head>
+
+<body class="bg-light">
+    <!-- Навигация -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">Sentiment ML</a>
+            <div class="ms-auto">
+                <a href="/history.html" class="btn btn-outline-light me-2">История</a>
+                <button id="logoutBtn" class="btn btn-light">Выйти</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-4">
+        <h1 class="mb-4">Личный кабинет</h1>
+        <!-- Баланс и пополнение -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Баланс</h5>
+                <p class="display-6 text-primary" id="balance">0.00</p>
+                <div class="input-group mb-3" style="max-width: 300px;">
+                    <input type="number" id="topupAmount" class="form-control" placeholder="Сумма" min="1" value="50">
+                    <button class="btn btn-success" id="topupBtn">Пополнить</button>
+                </div>
+                <div id="topupMessage" class="text-danger"></div>
+            </div>
+        </div>
+
+        <!-- Форма предсказания -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Анализ тональности</h5>
+                <div class="mb-3">
+                    <label for="textInput" class="form-label">Введите текст</label>
+                    <textarea class="form-control" id="textInput" rows="3"
+                        placeholder="Например: Сегодня отличный день!"></textarea>
+                </div>
+                <button class="btn btn-primary" id="predictBtn">Отправить</button>
+                <div id="predictResult" class="mt-3"></div>
+                <div id="predictError" class="mt-3 text-danger"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Получаем токен из localStorage
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            window.location.href = '/login.html'; // если нет токена, перенаправляем на вход
+        }
+
+        // Функция для выполнения авторизованных запросов
+        async function apiRequest(url, method = 'GET', body = null) {
+            const headers = {
+                'Authorization': 'Bearer ' + token,
+                'Content-Type': 'application/json'
+            };
+            const response = await fetch(url, {
+                method: method,
+                headers: headers,
+                body: body ? JSON.stringify(body) : null
+            });
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.detail || 'Ошибка запроса');
+            }
+            return response.json();
+        }
+
+        // Обновление баланса
+        async function updateBalance() {
+            try {
+                const data = await apiRequest('/balance');
+                document.getElementById('balance').textContent = data.balance;
+            } catch (err) {
+                document.getElementById('topupMessage').textContent = err.message;
+            }
+        }
+
+        // Пополнение баланса
+        document.getElementById('topupBtn').addEventListener('click', async () => {
+            const amount = document.getElementById('topupAmount').value;
+            if (!amount || amount <= 0) {
+                document.getElementById('topupMessage').textContent = 'Введите положительную сумму';
+                return;
+            }
+            try {
+                const data = await apiRequest('/balance/topup', 'POST', { amount: parseFloat(amount) });
+                document.getElementById('balance').textContent = data.balance;
+                document.getElementById('topupMessage').textContent = 'Баланс успешно пополнен!';
+                document.getElementById('topupMessage').className = 'text-success';
+            } catch (err) {
+                document.getElementById('topupMessage').textContent = err.message;
+                document.getElementById('topupMessage').className = 'text-danger';
+            }
+        });
+
+        // Отправка предсказания
+        document.getElementById('predictBtn').addEventListener('click', async () => {
+            const text = document.getElementById('textInput').value.trim();
+            if (!text) {
+                document.getElementById('predictError').textContent = 'Введите текст для анализа';
+                return;
+            }
+            document.getElementById('predictError').textContent = '';
+            document.getElementById('predictResult').innerHTML = '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Загрузка...</span></div>';
+            try {
+                const data = await apiRequest('/predict', 'POST', { text });
+                //в ответе может быть статус pending
+                if (data.status === 'completed') {
+                    showPredictionResult(data);
+                } else {
+                    // Если pending, ждём немного и пробуем получить результат
+                    setTimeout(async () => {
+                        try {
+                            // Здесь можно использовать GET /history/predictions?limit=1
+                            const hist = await apiRequest('/history/predictions?limit=1');
+                            if (hist.length > 0 && hist[0].id === data.task_id) {
+                                showPredictionResult(hist[0]);
+                            } else {
+                                document.getElementById('predictResult').innerHTML = '<div class="alert alert-info">Задача всё ещё обрабатывается. Обновите страницу.</div>';
+                            }
+                        } catch (e) {
+                            document.getElementById('predictError').textContent = e.message;
+                        }
+                    }, 2000);
+                }
+            } catch (err) {
+                document.getElementById('predictError').textContent = err.message;
+            }
+        });
+
+        function showPredictionResult(result) {
+            document.getElementById('predictResult').innerHTML = `
+                <div class="alert alert-success">
+                    <strong>Результат:</strong> ${result.label || result.result?.label}<br>
+                    <strong>Уверенность:</strong> ${result.confidence || result.result?.confidence}<br>
+                    <strong>Статус:</strong> ${result.status}
+                </div>`;
+            updateBalance();
+        }
+
+        // Выход
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('access_token');
+            window.location.href = '/login.html';
+        });
+
+        // Инициализация
+        updateBalance();
+    </script>
+</body>
+
+</html>
