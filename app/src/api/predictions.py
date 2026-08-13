@@ -1,11 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 from src.api.dependencies import get_current_user, get_db
 from src.api.schemas import PredictionRequest, PredictionResponse
-from src.db.models import MLModel, MLTask, PredictionResult, User
-from src.services.user_service import deduct_balance
-from decimal import Decimal
-from src.db.models import TaskStatus
+from shared.db.models import MLModel, MLTask, User, TaskStatus
+from shared.services.user_service import deduct_balance
+from src.broker.rabbitmq import publish_task
+import uuid
 
 router = APIRouter(prefix="/predict", tags=["predictions"])
 
@@ -15,7 +15,7 @@ def create_prediction(
     request: PredictionRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
-) -> PredictionResponse:
+):
     model = db.exec(select(MLModel).where(
         MLModel.name == "Text Sentiment Classifier")).first()
     if not model:
@@ -41,23 +41,11 @@ def create_prediction(
         db.commit()
         raise HTTPException(status_code=500, detail="Balance deduction failed")
 
-    # Заглушка результата
-    label = "neutral"
-    confidence = Decimal("0.9")
-    prediction = PredictionResult(
-        task_id=task.id,
-        label=label,
-        confidence=confidence,
-        model_id=model.id,
-    )
-    db.add(prediction)
-    task.status = TaskStatus.COMPLETED
-    db.add(task)
-    db.commit()
+    publish_task(str(task.id))
 
     return PredictionResponse(
         task_id=str(task.id),
-        status=task.status,
-        label=label,
-        confidence=confidence,
+        status=task.status.value,
+        label=None,
+        confidence=None
     )

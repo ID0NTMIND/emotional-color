@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends
 from sqlmodel import Session
 from src.api.dependencies import get_current_user, get_db
-from src.services.user_service import get_user_history
+from shared.services.user_service import get_user_history
 from src.api.schemas import TransactionOut, MLTaskOut
-from src.db.models import User
+from shared.db.models import User
 from typing import List
 
 router = APIRouter(prefix="/history", tags=["history"])

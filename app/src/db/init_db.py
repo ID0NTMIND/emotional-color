@@ -1,6 +1,6 @@
 from sqlmodel import Session, select
-from .database import engine
-from .models import User, Balance, MLModel, SQLModel
+from shared.db.database import engine
+from shared.db.models import User, Balance, MLModel, SQLModel
 from decimal import Decimal
 
 

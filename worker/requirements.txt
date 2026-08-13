@@ -1,7 +1,5 @@
-fastapi==0.141.1
-uvicorn==0.52.1
 SQLAlchemy==2.0.51
 sqlmodel==0.0.39
 psycopg2-binary==2.9.12
-passlib==1.7.4
 pika==1.4.4
+transformers==5.15.0

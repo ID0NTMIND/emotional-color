@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from src.api.dependencies import get_current_user
 from src.api.schemas import UserProfile
-from src.db.models import User
+from shared.db.models import User
 from decimal import Decimal
 
 router = APIRouter(prefix="/users", tags=["users"])

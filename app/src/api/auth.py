@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session
 from src.api.dependencies import get_db
-from src.services.user_service import create_user, get_user_by_username
+from shared.services.user_service import create_user, get_user_by_username
 from src.core.security import get_password_hash, verify_password
 from src.api.schemas import UserRegister, UserLogin, TokenResponse
 from decimal import Decimal

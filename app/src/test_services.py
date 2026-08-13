@@ -4,9 +4,9 @@ Run inside container: docker compose exec app python src/test_services.py
 """
 
 from sqlmodel import Session, select
-from src.db.database import engine
-from src.db.models import User
-from src.services.user_service import (
+from shared.db.database import engine
+from shared.db.models import User
+from shared.services.user_service import (
     create_user, get_user_by_username, top_up_balance, deduct_balance, get_user_history
 )
 from decimal import Decimal
