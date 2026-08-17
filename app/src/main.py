@@ -29,20 +29,20 @@ app.include_router(predictions.router)
 
 
 @app.get("/", response_class=HTMLResponse)
-async def read_index(request: Request, current_user: Optional[User] = Depends(get_current_user_from_cookie)):
+async def read_index(request: Request, current_user: Optional[User] = Depends(get_current_user_from_cookie)) -> HTMLResponse:
     return templates.TemplateResponse(request, "index.html", {"current_user": current_user})
 
 
 @app.get("/login", response_class=HTMLResponse)
-async def login_page(request: Request, current_user: Optional[User] = Depends(get_current_user_from_cookie)):
+async def login_page(request: Request, current_user: Optional[User] = Depends(get_current_user_from_cookie)) -> HTMLResponse:
     return templates.TemplateResponse(request, "login.html", {"current_user": current_user})
 
 
 @app.get("/dashboard", response_class=HTMLResponse)
-async def dashboard_page(request: Request, current_user: Optional[User] = Depends(get_current_user_from_cookie)):
+async def dashboard_page(request: Request, current_user: Optional[User] = Depends(get_current_user_from_cookie)) -> HTMLResponse:
     return templates.TemplateResponse(request, "dashboard.html", {"current_user": current_user})
 
 
 @app.get("/history", response_class=HTMLResponse)
-async def history_page(request: Request, current_user: Optional[User] = Depends(get_current_user_from_cookie)):
+async def history_page(request: Request, current_user: Optional[User] = Depends(get_current_user_from_cookie)) -> HTMLResponse:
     return templates.TemplateResponse(request, "history.html", {"current_user": current_user})
