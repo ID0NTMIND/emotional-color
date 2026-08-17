@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Личный кабинет{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Личный кабинет</h1>
+    {% if current_user %}
+    <span class="fs-5 text-muted">Привет, {{ current_user.username }}!</span>
+    {% endif %}
+</div>
+
+<!-- Баланс и пополнение -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Баланс</h5>
+        <p class="balance-big" id="balance">0.00</p>
+        <div class="input-group mb-3" style="max-width: 300px;">
+            <input type="number" id="topupAmount" class="form-control" placeholder="Сумма" min="1" value="50">
+            <button class="btn btn-success" id="topupBtn">Пополнить</button>
+        </div>
+        <div id="topupMessage"></div>
+    </div>
+</div>
+
+<!-- Форма предсказания -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Анализ тональности</h5>
+        <div class="mb-3">
+            <label for="textInput" class="form-label">Введите текст</label>
+            <textarea class="form-control" id="textInput" rows="3"
+                placeholder="Например: Сегодня отличный день!"></textarea>
+        </div>
+        <button class="btn btn-primary" id="predictBtn">Отправить</button>
+        <div id="predictResult" class="mt-3"></div>
+        <div id="predictError" class="mt-3"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/dashboard.js"></script>
+{% endblock %}
