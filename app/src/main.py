@@ -1,9 +1,13 @@
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, HTTPException, Request, Depends
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException
 from src.db.init_db import init
 from src.api import auth, users, balance, history, predictions
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from src.api.dependencies import get_current_user_from_cookie
+from typing import Optional
+from shared.db.models import User
 
 
 @asynccontextmanager
@@ -12,6 +16,8 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(title="ML Service API", lifespan=lifespan)
+
+templates = Jinja2Templates(directory="src/templates")
 
 app.mount("/static", StaticFiles(directory="src/static"), name="static")
 
@@ -22,15 +28,21 @@ app.include_router(history.router)
 app.include_router(predictions.router)
 
 
-@app.get("/")
-async def read_index():
-    return FileResponse("src/static/index.html")
+@app.get("/", response_class=HTMLResponse)
+async def read_index(request: Request, current_user: Optional[User] = Depends(get_current_user_from_cookie)):
+    return templates.TemplateResponse(request, "index.html", {"current_user": current_user})
 
 
-@app.get("/{page}.html")
-async def read_page(page: str):
-    # Проверяем, что файл существует, иначе отдаём 404
-    allowed = {"index", "login", "dashboard", "history"}
-    if page not in allowed:
-        raise HTTPException(status_code=404, detail="Page not found")
-    return FileResponse(f"src/static/{page}.html")
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request, current_user: Optional[User] = Depends(get_current_user_from_cookie)):
+    return templates.TemplateResponse(request, "login.html", {"current_user": current_user})
+
+
+@app.get("/dashboard", response_class=HTMLResponse)
+async def dashboard_page(request: Request, current_user: Optional[User] = Depends(get_current_user_from_cookie)):
+    return templates.TemplateResponse(request, "dashboard.html", {"current_user": current_user})
+
+
+@app.get("/history", response_class=HTMLResponse)
+async def history_page(request: Request, current_user: Optional[User] = Depends(get_current_user_from_cookie)):
+    return templates.TemplateResponse(request, "history.html", {"current_user": current_user})
