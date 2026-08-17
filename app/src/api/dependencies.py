@@ -1,9 +1,9 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlmodel import Session, select
 from shared.db.database import engine
 from shared.db.models import User
-from typing import Generator
+from typing import Generator, Optional
 
 security = HTTPBearer()
 
@@ -25,3 +25,13 @@ def get_current_user(
             detail="Invalid or expired token"
         )
     return user
+
+
+def get_current_user_from_cookie(request: Request) -> Optional[User]:
+    token = request.cookies.get('access_token')
+    if not token:
+        return None
+    with Session(engine) as session:
+        user = session.exec(select(User).where(
+            User.auth_token == token)).first()
+        return user
