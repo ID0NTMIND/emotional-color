@@ -1,7 +1,5 @@
-// static/js/auth.js
-
 document.addEventListener('DOMContentLoaded', function () {
-    // Если пользователь уже авторизован, перенаправляем в кабинет
+    // Перенаправляем на dashboard, если cookie с токеном уже есть
     if (isAuthenticated()) {
         window.location.href = '/dashboard';
     }
@@ -19,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Прямой fetch для авторизации (без apiRequest, чтобы корректно обработать 401)
+    // Прямой fetch для авторизации (без apiRequest, чтобы не срабатывал обработчик 401)
     async function authFetch(url, body) {
         const response = await fetch(url, {
             method: 'POST',
@@ -40,8 +38,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const password = document.getElementById('loginPassword').value;
         try {
             const data = await authFetch('/auth/login', { username, password });
-            localStorage.setItem('access_token', data.access_token);
-            document.cookie = `access_token=${data.access_token}; path=/; SameSite=Strict`;
+            // cookie уже установлена сервером, просто переходим
             window.location.href = '/dashboard';
         } catch (err) {
             document.getElementById('authMessage').innerHTML = `<div class="alert alert-danger">⚠️ ${err.message}</div>`;
@@ -55,8 +52,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const password = document.getElementById('regPassword').value;
         try {
             const data = await authFetch('/auth/register', { username, password });
-            localStorage.setItem('access_token', data.access_token);
-            document.cookie = `access_token=${data.access_token}; path=/; SameSite=Strict`;
+            // cookie уже установлена сервером, просто переходим
             window.location.href = '/dashboard';
         } catch (err) {
             document.getElementById('authMessage').innerHTML = `<div class="alert alert-danger">⚠️ ${err.message}</div>`;

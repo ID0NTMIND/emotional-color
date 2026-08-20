@@ -1,11 +1,11 @@
-from fastapi import Depends, HTTPException, status, Request
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlmodel import Session, select
 from shared.db.database import engine
 from shared.db.models import User
 from typing import Generator, Optional
 
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)  # не падаем, если заголовка нет
 
 
 def get_db() -> Generator[Session, None, None]:
@@ -14,10 +14,20 @@ def get_db() -> Generator[Session, None, None]:
 
 
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
     db: Session = Depends(get_db)
 ) -> User:
-    token = credentials.credentials
+    token = request.cookies.get('access_token')
+    if not token and credentials:
+        token = credentials.credentials
+
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated"
+        )
+
     user = db.exec(select(User).where(User.auth_token == token)).first()
     if not user:
         raise HTTPException(
@@ -25,6 +35,8 @@ def get_current_user(
             detail="Invalid or expired token"
         )
     return user
+
+# Функция для страниц: возвращает None, если пользователь не авторизован
 
 
 def get_current_user_from_cookie(request: Request) -> Optional[User]:
