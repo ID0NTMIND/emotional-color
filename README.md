@@ -24,6 +24,7 @@
 
 ```bash
 docker compose up --build
+```
 
 ## Запуск
 
