@@ -16,8 +16,21 @@ async function apiRequest(url, method = 'GET', body = null) {
     }
 
     if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.detail || 'Ошибка запроса');
+        let detail = 'Ошибка запроса';
+        try {
+            const err = await response.json();
+            if (typeof err.detail === 'string') {
+                detail = err.detail;
+            } else if (Array.isArray(err.detail) && err.detail.length > 0) {
+                // Извлекаем сообщения из ошибок Pydantic (422)
+                detail = err.detail.map(e => e.msg || e).join(', ');
+            } else if (typeof err.detail === 'object' && err.detail !== null) {
+                detail = JSON.stringify(err.detail);
+            }
+        } catch (e) {
+            // Если ответ не JSON, оставляем дефолтное сообщение
+        }
+        throw new Error(detail);
     }
 
     return response.json();

@@ -1,4 +1,3 @@
-// static/js/dashboard.js
 document.addEventListener('DOMContentLoaded', function () {
     // Если нет токена, перенаправляем на логин
     if (!isAuthenticated()) {
@@ -24,6 +23,10 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function showPredictionResult(result) {
+        if (!result.label) {
+            document.getElementById('predictResult').innerHTML = '<div class="alert alert-warning">Результат ещё не готов.</div>';
+            return;
+        }
         const info = getSentimentInfo(result.label);
         document.getElementById('predictResult').innerHTML = `
             <div class="result-box ${info.cssClass}">
@@ -57,25 +60,36 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('predictError').innerHTML = '<div class="alert alert-danger">⚠️ Введите текст для анализа</div>';
             return;
         }
+        if (text.length > 512) {
+            document.getElementById('predictError').innerHTML = '<div class="alert alert-danger">⚠️ Максимальная длина текста 512 символов</div>';
+            return;
+        }
         document.getElementById('predictError').innerHTML = '';
         document.getElementById('predictResult').innerHTML = '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Загрузка...</span></div>';
 
         try {
             const data = await apiRequest('/predict', 'POST', { text });
             updateBalance(); // баланс списан сразу
+
             if (data.status === 'completed') {
                 showPredictionResult(data);
             } else {
                 // Ожидание результата через опрос истории
-                setTimeout(async () => {
+                let attempts = 0;
+                const maxAttempts = 10; // максимум 20 секунд ожидания
+                const interval = setInterval(async () => {
+                    attempts++;
                     try {
                         const hist = await apiRequest('/history/predictions?limit=1');
                         if (hist.length > 0 && hist[0].id === data.task_id) {
+                            clearInterval(interval);
                             showPredictionResult(hist[0]);
-                        } else {
+                        } else if (attempts >= maxAttempts) {
+                            clearInterval(interval);
                             document.getElementById('predictResult').innerHTML = '<div class="alert alert-info">Задача всё ещё обрабатывается. Обновите страницу.</div>';
                         }
                     } catch (e) {
+                        clearInterval(interval);
                         document.getElementById('predictResult').innerHTML = '';
                         document.getElementById('predictError').innerHTML = `<div class="alert alert-danger">⚠️ ${e.message}</div>`;
                     }
